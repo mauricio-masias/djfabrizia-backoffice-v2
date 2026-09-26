@@ -1,0 +1,26 @@
+{
+    "name": "djfabrizia/content",
+    "description": "Shared content models, enums and page blocks for the DJ Fabrizia back office and endpoint.",
+    "type": "library",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.4",
+        "illuminate/database": "^13.0",
+        "illuminate/support": "^13.0",
+        "illuminate/validation": "^13.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Djfabrizia\\Content\\": "src/",
+            "Djfabrizia\\Content\\Database\\Factories\\": "database/factories/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Djfabrizia\\Content\\ContentServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable"
+}

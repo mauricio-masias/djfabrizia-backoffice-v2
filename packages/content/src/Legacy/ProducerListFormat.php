@@ -38,10 +38,10 @@ final class ProducerListFormat
 
             $groups[] = [
                 'title' => $match[1],
-                'items' => array_values(array_map(static fn (mixed $item): array => [
-                    'label' => is_array($item) && is_string($item['label'] ?? null) ? $item['label'] : null,
-                    'url' => is_array($item) && is_string($item['url'] ?? null) ? $item['url'] : null,
-                    'image_url' => is_array($item) && is_string($item['img'] ?? null) ? $item['img'] : null,
+                'items' => array_values(array_map(static fn (array $item): array => [
+                    'label' => is_string($item['label'] ?? null) ? $item['label'] : null,
+                    'url' => is_string($item['url'] ?? null) ? $item['url'] : null,
+                    'image_url' => is_string($item['img'] ?? null) ? $item['img'] : null,
                 ], array_filter($items, 'is_array'))),
             ];
         }

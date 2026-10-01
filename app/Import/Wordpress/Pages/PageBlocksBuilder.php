@@ -38,7 +38,9 @@ final class PageBlocksBuilder
                 ]),
                 $this->feed($meta, 'mixes'),
                 $this->feed($meta, 'releases'),
-                $this->feed($meta, 'playlists'),
+                // The WordPress homepage never showed playlists; this feed only
+                // configures the /playlists page.
+                [...$this->feed($meta, 'playlists'), 'data' => [...$this->feed($meta, 'playlists')['data'], 'display' => false]],
                 self::block(BlockType::Booking, [
                     'title' => $meta->get('book_me_title'),
                     'left' => $meta->get('book_me_left'),

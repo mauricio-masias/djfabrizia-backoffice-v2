@@ -4,8 +4,10 @@ namespace App\Filament\Resources\Pages\Schemas;
 
 use App\Filament\Blocks\BlockForms;
 use App\Filament\Forms\PublishingSection;
+use App\Filament\Resources\Pages\Pages\EditPage;
 use Djfabrizia\Content\Enums\PageLocale;
 use Djfabrizia\Content\Enums\PageTemplate;
+use Djfabrizia\Content\Models\Page;
 use Filament\Forms\Components\Builder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -34,9 +36,12 @@ class PageForm
                                         TextInput::make('slug')
                                             ->required()
                                             ->maxLength(255)
-                                            ->alphaDash()
+                                            ->regex('/^[a-z0-9]+(?:-[a-z0-9]+)*$/')
                                             ->unique(ignoreRecord: true)
-                                            ->helperText('The site asks for the page by this name.'),
+                                            ->disabled(fn (?Page $record): bool => $record !== null && EditPage::isSitePage($record))
+                                            ->helperText(fn (?Page $record): string => $record !== null && EditPage::isSitePage($record)
+                                                ? 'Fixed: the site asks for this page by this name.'
+                                                : 'Lowercase letters, numbers and dashes.'),
                                         Select::make('template')
                                             ->options(PageTemplate::options())
                                             ->required()

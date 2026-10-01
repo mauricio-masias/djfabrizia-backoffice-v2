@@ -7,6 +7,7 @@ use Djfabrizia\Content\Models\Media;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 
 /**
  * Stores uploaded files on the public disk and records them as Media rows.
@@ -14,6 +15,22 @@ use Illuminate\Support\Str;
 class MediaStorage
 {
     public const DISK = 'public';
+
+    /**
+     * The only files that can be stored, keyed by sniffed MIME type. The
+     * extension always comes from here, never from the client's filename, so a
+     * polyglot named "x.php" can never land on the public disk as PHP.
+     */
+    public const ALLOWED = [
+        'image/jpeg' => 'jpg',
+        'image/png' => 'png',
+        'image/webp' => 'webp',
+        'image/gif' => 'gif',
+        'audio/mpeg' => 'mp3',
+        'audio/mp3' => 'mp3',
+        'audio/wav' => 'wav',
+        'audio/x-wav' => 'wav',
+    ];
 
     /** Image types that get resized webp variants. */
     private const VARIANT_MIMES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -23,7 +40,8 @@ class MediaStorage
      */
     public function store(UploadedFile $file, string $directory = 'media', ?string $alt = null): Media
     {
-        $extension = strtolower($file->getClientOriginalExtension() ?: (string) $file->guessExtension());
+        $mime = (string) $file->getMimeType();
+        $extension = self::ALLOWED[$mime] ?? throw new InvalidArgumentException("Files of type {$mime} cannot be uploaded.");
         $name = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) ?: 'file';
         $path = $file->storeAs(
             $directory.'/'.now()->format('Y/m'),
@@ -35,7 +53,7 @@ class MediaStorage
             throw new \RuntimeException('Could not store the uploaded file.');
         }
 
-        return $this->record($path, $file->getMimeType(), $alt);
+        return $this->record($path, $mime, $alt);
     }
 
     /**

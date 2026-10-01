@@ -18,7 +18,7 @@ final class SyncedNotice
             ? 'This item is no longer available upstream'
             : 'Synced from '.self::source($record)?->label())
             ->description(fn (?Model $record): string => self::isMissing($record)
-                ? 'It was set to draft by the last sync. It is kept so nothing breaks; delete it once it is no longer used.'
+                ? 'A page still uses it, so the sync kept it as a draft instead of deleting it. Remove it from those pages, then delete it.'
                 : 'Titles, links, images and durations come from the provider and are refreshed on every sync. Status and order stay yours.')
             ->color(fn (?Model $record): string => self::isMissing($record) ? 'warning' : 'info')
             ->visible(fn (?Model $record): bool => self::isSynced($record))

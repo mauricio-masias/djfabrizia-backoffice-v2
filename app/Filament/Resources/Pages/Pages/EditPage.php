@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Pages\Pages;
 
 use App\Filament\Resources\Pages\Actions\DuplicatePageAction;
+use App\Filament\Resources\Pages\Actions\PreviewJsonAction;
 use App\Filament\Resources\Pages\Concerns\ValidatesPageContent;
 use App\Filament\Resources\Pages\PageResource;
 use Djfabrizia\Content\Legacy\WordpressPages;
@@ -19,6 +20,7 @@ class EditPage extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            PreviewJsonAction::make(),
             DuplicatePageAction::make(),
             DeleteAction::make()
                 ->hidden(fn (Page $record): bool => self::isSitePage($record)),

@@ -11,6 +11,7 @@ use Djfabrizia\Content\Models\Concerns\UsesContentConnection;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * A page built from ordered blocks (Filament Builder shape).
@@ -23,6 +24,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property list<array<string, mixed>> $blocks stored Builder items: ['type' => string, 'data' => array]
  * @property array<string, mixed>|null $seo
  * @property int|null $legacy_wp_id
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 class Page extends Model
 {

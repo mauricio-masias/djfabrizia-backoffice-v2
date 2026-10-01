@@ -15,6 +15,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Utilities\Get;
@@ -127,6 +128,11 @@ final class BlockForms
                 self::line('more_label', '"More" button label'),
                 self::line('channel_id', 'YouTube channel')
                     ->visible(fn (Get $get): bool => $get('collection') === 'videos'),
+                Toggle::make('display')
+                    ->label('Show on this page')
+                    ->default(true)
+                    ->helperText('Off: not shown here, but still sets the title, page size and button label of the list page.')
+                    ->columnSpanFull(),
             ],
             BlockType::VenuesUk => [
                 self::title()->helperText('The venues themselves are edited under Venues → UK venues.'),

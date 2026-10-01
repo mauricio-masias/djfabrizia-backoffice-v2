@@ -31,7 +31,7 @@ final class DuplicatePageAction
             ])
             ->schema([
                 TextInput::make('title')->required()->maxLength(255),
-                TextInput::make('slug')->required()->maxLength(255)->alphaDash()->rules([Rule::unique(Page::class, 'slug')]),
+                TextInput::make('slug')->required()->maxLength(255)->regex('/^[a-z0-9]+(?:-[a-z0-9]+)*$/')->rules([Rule::unique(Page::class, 'slug')]),
                 Select::make('locale')->label('Language')->options(PageLocale::options())->required(),
             ])
             ->action(function (Page $record, array $data, Action $action): void {

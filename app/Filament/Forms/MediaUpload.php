@@ -15,7 +15,8 @@ use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
  */
 final class MediaUpload
 {
-    public const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];
+    /** SVG is not accepted: it can carry scripts and is served from our own origin. */
+    public const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
     public const AUDIO_TYPES = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav'];
 

@@ -9,4 +9,4 @@ parameters:
         - database
         - routes
         - packages/content/src
-    tmpDir: storage/phpstan
+    tmpDir: storage/framework/cache/phpstan

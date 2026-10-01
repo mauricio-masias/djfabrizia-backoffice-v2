@@ -25,7 +25,7 @@ class UserForm
                         TextInput::make('password')
                             ->password()
                             ->revealable()
-                            ->rule(Password::min(12))
+                            ->rule(Password::default())
                             ->required(fn (string $operation): bool => $operation === 'create')
                             ->dehydrated(fn (?string $state): bool => filled($state))
                             ->helperText(fn (string $operation): ?string => $operation === 'edit' ? 'Leave empty to keep the current password.' : null),

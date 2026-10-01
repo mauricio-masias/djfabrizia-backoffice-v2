@@ -19,7 +19,7 @@ class BlockHydratorTest extends TestCase
     public function test_it_resolves_every_reference_with_one_query_per_kind(): void
     {
         $media = Media::factory()->count(6)->create();
-        $mixes = Mix::factory()->count(5)->create();
+        $mixes = Mix::factory()->count(5)->published()->create();
 
         $page = Page::factory()->template(PageTemplate::EpkDefault)->withBlocks([
             ['type' => BlockType::EpkGallery->value, 'data' => ['image_media_ids' => $media->take(4)->pluck('id')->all()]],
@@ -79,5 +79,16 @@ class BlockHydratorTest extends TestCase
         DB::disableQueryLog();
 
         $this->assertSame(0, $queries);
+    }
+
+    public function test_unpublished_mixes_are_hidden_unless_drafts_are_asked_for(): void
+    {
+        $draft = Mix::factory()->draft()->create();
+        $page = Page::factory()->withBlocks([
+            ['type' => BlockType::EpkMixes->value, 'data' => ['items' => [['mix_id' => $draft->id]]]],
+        ])->create();
+
+        $this->assertNull((new BlockHydrator)->hydrate($page)->mix($draft->id));
+        $this->assertTrue((new BlockHydrator)->hydrate($page, includeDrafts: true)->mix($draft->id)?->is($draft));
     }
 }

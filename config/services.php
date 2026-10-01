@@ -35,4 +35,29 @@ return [
         ],
     ],
 
+    /*
+    | Content syncs. Account names/IDs are editorial settings (Settings page);
+    | only credentials live here. Mixcloud's public API needs none.
+    */
+
+    'mixcloud' => [
+        'api_url' => 'https://api.mixcloud.com',
+    ],
+
+    'spotify' => [
+        'client_id' => env('SPOTIFY_CLIENT_ID'),
+        'client_secret' => env('SPOTIFY_CLIENT_SECRET'),
+        // Optional: a user refresh token also returns the account's private and
+        // collaborative playlists. Without it, public playlists are read with
+        // an app token (client credentials).
+        'refresh_token' => env('SPOTIFY_REFRESH_TOKEN'),
+        'accounts_url' => 'https://accounts.spotify.com',
+        'api_url' => 'https://api.spotify.com/v1',
+    ],
+
+    'youtube' => [
+        'api_key' => env('YOUTUBE_API_KEY'),
+        'api_url' => 'https://www.googleapis.com/youtube/v3',
+    ],
+
 ];

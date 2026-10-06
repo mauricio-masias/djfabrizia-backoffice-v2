@@ -15,7 +15,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * Content scheduled for a future date appears when that date passes; nothing
- * is saved at that moment, so this hourly task queues its topics.
+ * is saved at that moment, so this every-minute task queues its topics.
  */
 class WarmScheduledContent extends Command
 {

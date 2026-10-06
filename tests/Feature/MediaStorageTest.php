@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Jobs\GenerateMediaVariants;
 use App\Media\MediaStorage;
+use Djfabrizia\Content\Models\Media;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
@@ -101,5 +102,30 @@ class MediaStorageTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
 
         app(MediaStorage::class)->store(UploadedFile::fake()->create($name, 1, $mime));
+    }
+
+    public function test_livewire_temporary_uploads_stay_off_the_public_disk_and_are_type_checked(): void
+    {
+        $this->assertSame('local', config('livewire.temporary_file_upload.disk'));
+
+        $rules = implode(' ', config('livewire.temporary_file_upload.rules'));
+        $this->assertStringContainsString('mimetypes:image/jpeg', $rules);
+        $this->assertStringNotContainsString('text/html', $rules);
+        $this->assertStringNotContainsString('image/svg', $rules);
+    }
+
+    public function test_oversized_images_get_no_variants_instead_of_exhausting_memory(): void
+    {
+        Storage::fake('public');
+        $media = Media::factory()->create(['path' => 'media/huge.png', 'width' => 8000, 'height' => 8000]);
+        $tiny = imagecreatetruecolor(10, 10);
+        ob_start();
+        imagepng($tiny);
+        Storage::disk('public')->put($media->path, (string) ob_get_clean());
+
+        (new GenerateMediaVariants($media->id))->handle();
+
+        $this->assertNull($media->fresh()?->variants);
+        $this->assertCount(1, Storage::disk('public')->allFiles('media'));
     }
 }

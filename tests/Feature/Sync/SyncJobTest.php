@@ -9,12 +9,14 @@ use App\Jobs\SyncProviderJob;
 use App\Models\User;
 use App\Sync\Sources\YoutubeSource;
 use Djfabrizia\Content\Enums\SyncProvider;
+use Djfabrizia\Content\Enums\SyncStatus as SyncRunStatus;
 use Djfabrizia\Content\Models\SyncRun;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
+use RuntimeException;
 use Tests\TestCase;
 
 class SyncJobTest extends TestCase
@@ -30,6 +32,19 @@ class SyncJobTest extends TestCase
         $this->assertSame(1, $job->tries);
     }
 
+    public function test_a_run_killed_outside_the_runner_is_marked_failed(): void
+    {
+        $stuck = SyncRun::factory()->create(['provider' => SyncProvider::Youtube, 'status' => SyncRunStatus::Running, 'finished_at' => null]);
+        $other = SyncRun::factory()->create(['provider' => SyncProvider::Mixcloud, 'status' => SyncRunStatus::Running, 'finished_at' => null]);
+
+        (new SyncProviderJob(SyncProvider::Youtube))->failed(new RuntimeException('Job timed out key=secret'));
+
+        $this->assertSame(SyncRunStatus::Failed, $stuck->fresh()?->status);
+        $this->assertSame('Job timed out key=***', $stuck->fresh()?->error);
+        $this->assertNotNull($stuck->fresh()?->finished_at);
+        $this->assertSame(SyncRunStatus::Running, $other->fresh()?->status);
+    }
+
     public function test_each_provider_is_scheduled_daily_and_the_queue_is_drained_every_minute(): void
     {
         $events = collect(app(Schedule::class)->events());
@@ -42,6 +57,10 @@ class SyncJobTest extends TestCase
         $this->assertNotNull($drain);
         $this->assertSame('* * * * *', $drain->expression);
         $this->assertStringContainsString('--stop-when-empty', (string) $drain->command);
+        $this->assertTrue($drain->runInBackground);
+
+        $scheduled = $events->first(fn ($event): bool => $event->description === 'endpoint-warm-scheduled');
+        $this->assertSame('* * * * *', $scheduled?->expression);
     }
 
     public function test_sync_now_queues_the_job_from_the_back_office(): void

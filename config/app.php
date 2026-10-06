@@ -67,6 +67,9 @@ return [
 
     'timezone' => 'UTC',
 
+    // Dates are stored in UTC; editors type and read them in this timezone.
+    'editor_timezone' => env('CMS_EDITOR_TIMEZONE', 'Europe/London'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration

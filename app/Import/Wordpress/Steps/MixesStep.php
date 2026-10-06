@@ -33,7 +33,12 @@ class MixesStep implements ImportStep
                 continue;
             }
 
-            $taken = Mix::query()->where('external_id', $url)->where('legacy_wp_id', '!=', $post->ID)->exists();
+            // Synced rows have no legacy ID; "!=" alone would skip them (NULL) and
+            // the insert below would then hit the unique external_id index.
+            $taken = Mix::query()
+                ->where('external_id', $url)
+                ->where(fn ($query) => $query->whereNull('legacy_wp_id')->orWhere('legacy_wp_id', '!=', $post->ID))
+                ->exists();
 
             if ($taken) {
                 $context->warn("[mixes] mix {$post->ID} duplicates the Mixcloud URL {$url}; imported without an external ID");

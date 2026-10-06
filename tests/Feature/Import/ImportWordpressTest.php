@@ -97,6 +97,16 @@ class ImportWordpressTest extends TestCase
         $this->assertSame(PublishStatus::Published, $mix->status);
     }
 
+    public function test_a_mix_already_synced_from_mixcloud_does_not_abort_the_import(): void
+    {
+        Mix::factory()->create(['external_id' => '/djfabrizia/colony-club/', 'url' => '/djfabrizia/colony-club/', 'legacy_wp_id' => null]);
+
+        $this->import();
+
+        $this->assertSame(1, Mix::query()->where('external_id', '/djfabrizia/colony-club/')->count());
+        $this->assertNotNull(Mix::query()->where('legacy_wp_id', 101)->first());
+    }
+
     public function test_releases_split_the_description_and_import_store_links(): void
     {
         $this->import();

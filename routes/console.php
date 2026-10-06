@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Schedule;
 Schedule::command('queue:work --stop-when-empty --max-time=55 --tries=3 --timeout=120')
     ->everyMinute()
     ->withoutOverlapping(10)
+    ->runInBackground() // or a 55 s drain delays every other task of that minute
     ->name('queue-drain');
 
 // Daily content syncs (queued, then run by the queue drain above).
@@ -30,6 +31,6 @@ Schedule::job(new SyncProviderJob(SyncProvider::Youtube))->dailyAt('03:20')->nam
 
 // Public API cache: send pending content changes (saves send them at once;
 // this retries anything left over, e.g. after a sync), and pick up content
-// whose scheduled publish date has passed.
+// whose scheduled publish date has just passed, so it goes live on the minute.
 Schedule::command('endpoint:warm')->everyMinute()->withoutOverlapping(5)->name('endpoint-warm');
-Schedule::command('endpoint:warm-scheduled')->hourly()->name('endpoint-warm-scheduled');
+Schedule::command('endpoint:warm-scheduled')->everyMinute()->withoutOverlapping(5)->name('endpoint-warm-scheduled');

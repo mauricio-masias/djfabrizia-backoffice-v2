@@ -160,7 +160,7 @@ class PublishingTest extends AdminTestCase
         $this->assertSame(['mixes'], app(PendingWarmTopics::class)->all());
     }
 
-    public function test_content_whose_publish_date_passed_is_queued_hourly(): void
+    public function test_content_whose_publish_date_passed_is_queued(): void
     {
         Mix::factory()->create(['status' => 'published', 'published_at' => now()->subMinutes(20)]);
         Mix::factory()->create(['status' => 'published', 'published_at' => now()->addDay()]);

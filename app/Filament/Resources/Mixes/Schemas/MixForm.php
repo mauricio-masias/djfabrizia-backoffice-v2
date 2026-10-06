@@ -43,7 +43,7 @@ class MixForm
                                     ->disabled($upstream),
                                 TextInput::make('image_url')->label('Cover URL')->url()->maxLength(512)->disabled($upstream),
                                 TextInput::make('image_small_url')->label('Small cover URL')->url()->maxLength(512)->disabled($upstream),
-                                DateTimePicker::make('released_at')->label('Released')->seconds(false)->disabled($upstream),
+                                DateTimePicker::make('released_at')->label('Released')->timezone(config('app.editor_timezone'))->seconds(false)->disabled($upstream),
                                 TagsInput::make('source_tags')->label('Source tags')->disabled()->visible($upstream),
                                 Select::make('genres')
                                     ->relationship('genres', 'name')

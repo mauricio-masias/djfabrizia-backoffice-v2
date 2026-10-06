@@ -22,6 +22,12 @@ class GenerateMediaVariants implements ShouldQueue
 
     private const QUALITY = 80;
 
+    /**
+     * GD decodes the whole bitmap (about 4 bytes per pixel plus overhead):
+     * 25 MP is roughly 100 MB, the most a shared-hosting worker can take.
+     */
+    public const MAX_PIXELS = 25_000_000;
+
     public int $tries = 3;
 
     public int $timeout = 120;
@@ -40,7 +46,16 @@ class GenerateMediaVariants implements ShouldQueue
         }
 
         $disk = Storage::disk($media->disk);
-        $source = @imagecreatefromstring((string) $disk->get($media->path));
+        $contents = (string) $disk->get($media->path);
+
+        if (self::tooLarge($media->width, $media->height) || self::tooLarge(...self::dimensions($contents))) {
+            Log::warning('Media variants skipped: image too large to resize safely', ['media_id' => $media->id, 'width' => $media->width, 'height' => $media->height]);
+            $media->update(['variants' => null]);
+
+            return;
+        }
+
+        $source = @imagecreatefromstring($contents);
 
         if (! $source instanceof GdImage) {
             Log::warning('Media variants skipped: not a readable image', ['media_id' => $media->id]);
@@ -74,6 +89,21 @@ class GenerateMediaVariants implements ShouldQueue
         imagedestroy($source);
 
         $media->update(['variants' => $variants === [] ? null : $variants]);
+    }
+
+    private static function tooLarge(?int $width, ?int $height): bool
+    {
+        return $width !== null && $height !== null && $width * $height > self::MAX_PIXELS;
+    }
+
+    /**
+     * @return array{0: int|null, 1: int|null}
+     */
+    private static function dimensions(string $contents): array
+    {
+        $size = @getimagesizefromstring($contents);
+
+        return $size === false ? [null, null] : [$size[0], $size[1]];
     }
 
     public function failed(Throwable $exception): void

@@ -27,7 +27,8 @@ final class PublishingSection
                     ->required(),
                 DateTimePicker::make('published_at')
                     ->label('Publish date')
-                    ->helperText('Leave empty to publish immediately. A future date schedules it.')
+                    ->helperText('Leave empty to publish immediately. A future date schedules it (checked every minute).')
+                    ->timezone(config('app.editor_timezone'))
                     ->seconds(false),
             ]);
     }

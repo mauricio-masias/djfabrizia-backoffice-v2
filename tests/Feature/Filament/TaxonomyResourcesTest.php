@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Filament;
 
+use App\Events\ContentChanged;
 use App\Filament\Resources\Genres\Pages\CreateGenre;
 use App\Filament\Resources\Genres\Pages\ListGenres;
 use App\Filament\Resources\RecordLabels\Pages\ListRecordLabels;
@@ -9,6 +10,7 @@ use Djfabrizia\Content\Models\Genre;
 use Djfabrizia\Content\Models\Mix;
 use Djfabrizia\Content\Models\RecordLabel;
 use Djfabrizia\Content\Models\Release;
+use Illuminate\Support\Facades\Event;
 use Livewire\Livewire;
 
 class TaxonomyResourcesTest extends AdminTestCase
@@ -23,9 +25,13 @@ class TaxonomyResourcesTest extends AdminTestCase
         $mix->genres()->attach($duplicate);
         $shared->genres()->attach([$keep->id, $duplicate->id]);
 
+        Event::fake([ContentChanged::class]);
+
         Livewire::test(ListGenres::class)
             ->callTableBulkAction('merge', [$keep, $duplicate], ['target' => $keep->id])
             ->assertNotified();
+
+        Event::assertDispatched(ContentChanged::class, fn (ContentChanged $event): bool => $event->topics === ['genres', 'mixes', 'releases']);
 
         $this->assertModelMissing($duplicate);
         $this->assertTrue($mix->genres()->first()?->is($keep));
@@ -40,8 +46,12 @@ class TaxonomyResourcesTest extends AdminTestCase
         $other = RecordLabel::factory()->create(['name' => 'On circle']);
         $release = Release::factory()->create(['record_label_id' => $other->id]);
 
+        Event::fake([ContentChanged::class]);
+
         Livewire::test(ListRecordLabels::class)
             ->callTableBulkAction('merge', [$keep, $other], ['target' => $keep->id]);
+
+        Event::assertDispatched(ContentChanged::class, fn (ContentChanged $event): bool => $event->topics === ['releases']);
 
         $this->assertModelMissing($other);
         $this->assertSame($keep->id, $release->fresh()?->record_label_id);

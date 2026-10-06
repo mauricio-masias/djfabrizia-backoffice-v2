@@ -8,9 +8,12 @@ use App\Sync\Sources\YoutubeSource;
 use App\Sync\SyncRunner;
 use App\Sync\SyncSource;
 use Djfabrizia\Content\Enums\SyncProvider;
+use Djfabrizia\Content\Enums\SyncStatus;
+use Djfabrizia\Content\Models\SyncRun;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
+use Throwable;
 
 /**
  * Syncs one provider. Scheduled daily and started by the "Sync now" buttons;
@@ -39,6 +42,22 @@ class SyncProviderJob implements ShouldQueue
     public function handle(SyncRunner $runner): void
     {
         $runner->run(self::source($this->provider));
+    }
+
+    /**
+     * A run killed from outside the runner (worker timeout, fatal error) would
+     * otherwise stay "running" forever in the sync log.
+     */
+    public function failed(?Throwable $exception): void
+    {
+        SyncRun::query()
+            ->where('provider', $this->provider)
+            ->where('status', SyncStatus::Running)
+            ->update([
+                'status' => SyncStatus::Failed,
+                'finished_at' => now(),
+                'error' => mb_substr(SyncRunner::redact($exception?->getMessage() ?? 'The sync was stopped before it finished.'), 0, 1000),
+            ]);
     }
 
     public static function source(SyncProvider $provider): SyncSource

@@ -44,10 +44,10 @@ cd /home/USER/domains/backoffice.example.com && /opt/alt/php84/usr/bin/php artis
 
 1. **Point the web root.** The back office subdomain must serve the `public/` folder, not the app root.
 2. **Create the database.** Create the database (e.g. `djfabriz_cms`) and a user with full rights on it. Then create a second, read-only user for the endpoint with `SELECT` on the database and `INSERT` on the `bookings` table. `docker/scripts/bootstrap-db.sh` shows the exact grants.
-3. **Upload the code** (git pull or upload), including `vendor/`, or run `composer install --no-dev --optimize-autoloader` on the server if SSH is available.
+3. **Install the code.** Either run `composer install --no-dev --optimize-autoloader` on the server (SSH; `packages/content` is inside this repo, so the path repository resolves), or build `vendor/` locally and upload it. **When uploading, build with `COMPOSER_MIRROR_PATH_REPOS=1 composer install --no-dev --optimize-autoloader`**: locally `vendor/djfabrizia/content` is a symlink into `packages/content`, SFTP and file managers drop symlinks, and the panel then fails with `Class Djfabrizia\Content\… not found`. Use `rsync -a --delete` for the upload.
 4. **Build the assets** locally with `npm ci && npm run build`, then upload `public/build/`.
 5. **Create `.env`** from `.env.example`:
-   - `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL=https://backoffice.example.com`
+   - `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL=https://backoffice.example.com`, `LOG_LEVEL=warning`, `LOG_STACK=daily`, `SESSION_SECURE_COOKIE=true`
    - `APP_KEY` from `php artisan key:generate --show`. Keep it: the encrypted OAuth tokens depend on it.
    - `DB_*` for the database user from step 2.
    - `QUEUE_CONNECTION=database`, `CACHE_STORE=database`, `SESSION_DRIVER=database`

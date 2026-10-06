@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use App\Events\ContentChanged;
 use Djfabrizia\Content\Models\Genre;
 use Djfabrizia\Content\Models\Release;
 use Illuminate\Database\Eloquent\Collection;
@@ -27,7 +28,7 @@ class MergeGenres
             throw new InvalidArgumentException('Select at least one other genre to merge.');
         }
 
-        return DB::transaction(function () use ($target, $sources): Genre {
+        $merged = DB::transaction(function () use ($target, $sources): Genre {
             $sourceIds = $sources->modelKeys();
             $sources->load(['mixes:id', 'releases:id']);
 
@@ -53,5 +54,10 @@ class MergeGenres
 
             return $target->refresh();
         });
+
+        // Query-builder writes fire no model events, so the publish observer never sees a merge.
+        ContentChanged::dispatch(['genres', 'mixes', 'releases']);
+
+        return $merged;
     }
 }

@@ -5,6 +5,7 @@ namespace Tests\Feature\Analytics;
 use App\Services\Analytics\CachedAnalyticsProvider;
 use App\Services\Analytics\Contracts\AnalyticsProvider;
 use App\Services\Analytics\Data\GeoRow;
+use App\Services\Analytics\Data\PageRow;
 use App\Services\Analytics\Data\Period;
 use App\Services\Analytics\Data\PeriodSummary;
 use App\Services\Analytics\Data\TrendPoint;
@@ -214,5 +215,62 @@ class AnalyticsCacheTest extends TestCase
         $rows = (new FakeAnalyticsProvider)->topCountries(Period::lastDays(7), 1);
 
         $this->assertSame('United Kingdom', $rows[0]->label());
+    }
+
+    public function test_top_pages_survive_a_store_that_forbids_object_serialization(): void
+    {
+        $store = $this->hardenedStore();
+        $provider = new CachedAnalyticsProvider(
+            inner: new FakeAnalyticsProvider,
+            cache: $store,
+            prefix: 'analytics',
+            liveTtl: 900,
+            historicalTtl: 43200,
+        );
+        $period = Period::lastDays(7);
+
+        $fresh = $provider->topPages($period, 20);
+        $cached = $provider->topPages($period, 20);
+
+        $this->assertContainsOnlyInstancesOf(PageRow::class, $cached);
+        $this->assertEquals($fresh, $cached);
+        $this->assertIsArray($store->get('analytics:pages:20:'.$period->cacheKey()));
+    }
+
+    public function test_top_pages_are_cached_per_period_and_limit(): void
+    {
+        $counter = new CountingAnalyticsProvider(new FakeAnalyticsProvider);
+        $provider = $this->cached($counter);
+
+        $provider->topPages(Period::lastDays(7));
+        $provider->topPages(Period::lastDays(7));
+        $provider->topPages(Period::lastDays(30));
+        $provider->topPages(Period::lastDays(7), 5);
+
+        $this->assertSame(3, $counter->pageCalls);
+    }
+
+    public function test_top_pages_use_the_live_ttl_while_settling_and_the_historical_ttl_after(): void
+    {
+        $store = Cache::store('array');
+        $provider = $this->cached(new FakeAnalyticsProvider);
+        $live = Period::lastDays(7);
+        $closed = Period::make($live->start->subDays(30), $live->start->subDays(10));
+
+        $provider->topPages($live);
+        $provider->topPages($closed);
+
+        $this->travel(901)->seconds();
+        $this->assertNull($store->get('analytics:pages:20:'.$live->cacheKey()));
+        $this->assertNotNull($store->get('analytics:pages:20:'.$closed->cacheKey()));
+    }
+
+    public function test_fake_top_pages_are_consolidated(): void
+    {
+        $pages = (new FakeAnalyticsProvider)->topPages(Period::lastDays(1));
+        $paths = array_map(fn (PageRow $page): string => $page->path, $pages);
+
+        $this->assertSame(['/', '/mixes', '/uk-gigs', '/contact-me'], $paths);
+        $this->assertSame(15, $pages[1]->views);
     }
 }

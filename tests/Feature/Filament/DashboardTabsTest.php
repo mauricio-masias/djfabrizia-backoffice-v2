@@ -9,6 +9,7 @@ use App\Filament\Widgets\LatestBookings;
 use App\Filament\Widgets\SyncStatus;
 use App\Filament\Widgets\TopCitiesWidget;
 use App\Filament\Widgets\TopCountriesChart;
+use App\Filament\Widgets\TopPagesWidget;
 use App\Filament\Widgets\VisitorsTrendChart;
 use App\Services\Analytics\Contracts\AnalyticsProvider;
 use App\Services\Analytics\FakeAnalyticsProvider;
@@ -23,6 +24,7 @@ class DashboardTabsTest extends AdminTestCase
         VisitorsTrendChart::class,
         TopCountriesChart::class,
         TopCitiesWidget::class,
+        TopPagesWidget::class,
     ];
 
     protected function setUp(): void

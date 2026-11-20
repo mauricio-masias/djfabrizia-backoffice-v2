@@ -5,6 +5,7 @@ namespace App\Services\Analytics;
 use App\Services\Analytics\Contracts\AnalyticsProvider;
 use App\Services\Analytics\Data\GeoRow;
 use App\Services\Analytics\Data\Granularity;
+use App\Services\Analytics\Data\PageRow;
 use App\Services\Analytics\Data\Period;
 use App\Services\Analytics\Data\PeriodSummary;
 use App\Services\Analytics\Data\TrendPoint;
@@ -132,6 +133,27 @@ final class FakeAnalyticsProvider implements AnalyticsProvider
             new GeoRow('PE', 'Peru', 'Lima', 44, 55),
             new GeoRow('', '(not set)', '(not set)', 19, 22),
         ], 0, $limit);
+    }
+
+    /**
+     * Raw rows as GA4 would send them: duplicate spellings of one page and a
+     * zero-view row, so consolidation is exercised. Scaled by period length
+     * so switching the filter visibly changes the numbers.
+     */
+    public function topPages(Period $period, int $limit = 20): array
+    {
+        $this->guard();
+
+        $days = $period->lengthInDays();
+
+        return PageRow::consolidate([
+            new PageRow('/', 40 * $days, 22 * $days),
+            new PageRow('/mixes', 12 * $days, 7 * $days),
+            new PageRow('/mixes/?utm_source=instagram', 3 * $days, 2 * $days),
+            new PageRow('/uk-gigs', 9 * $days, 5 * $days),
+            new PageRow('/contact-me#form', 4 * $days, 3 * $days),
+            new PageRow('/privacy-policy', 0, 1),
+        ], $limit);
     }
 
     private function guard(): void

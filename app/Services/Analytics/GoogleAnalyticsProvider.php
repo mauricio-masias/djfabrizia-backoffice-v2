@@ -5,6 +5,7 @@ namespace App\Services\Analytics;
 use App\Services\Analytics\Contracts\AnalyticsProvider;
 use App\Services\Analytics\Data\GeoRow;
 use App\Services\Analytics\Data\Granularity;
+use App\Services\Analytics\Data\PageRow;
 use App\Services\Analytics\Data\Period;
 use App\Services\Analytics\Data\PeriodSummary;
 use App\Services\Analytics\Data\TrendPoint;
@@ -170,6 +171,39 @@ final class GoogleAnalyticsProvider implements AnalyticsProvider
         }
 
         return $rows;
+    }
+
+    /**
+     * pageTitle is not requested: the public site is a single-page app and
+     * every route reports the same document title.
+     *
+     * More rows than needed are fetched, because rows that differ only by a
+     * query string or trailing slash are merged afterwards.
+     */
+    public function topPages(Period $period, int $limit = 20): array
+    {
+        $response = $this->runReport('topPages', $period, [
+            'dimensions' => ['pagePath'],
+            'metrics' => ['screenPageViews', 'activeUsers'],
+            'orderBys' => [
+                (new OrderBy)
+                    ->setMetric((new MetricOrderBy)->setMetricName('screenPageViews'))
+                    ->setDesc(true),
+            ],
+            'limit' => $limit * 3,
+        ]);
+
+        $rows = [];
+
+        foreach ($response->getRows() as $row) {
+            $rows[] = new PageRow(
+                path: $this->dimension($row, 0),
+                views: (int) $this->metric($row, 0),
+                visitors: (int) $this->metric($row, 1),
+            );
+        }
+
+        return PageRow::consolidate($rows, $limit);
     }
 
     /**

@@ -5,6 +5,7 @@ namespace App\Services\Analytics;
 use App\Services\Analytics\Contracts\AnalyticsProvider;
 use App\Services\Analytics\Data\GeoRow;
 use App\Services\Analytics\Data\Granularity;
+use App\Services\Analytics\Data\PageRow;
 use App\Services\Analytics\Data\Period;
 use App\Services\Analytics\Data\PeriodSummary;
 use App\Services\Analytics\Data\TrendPoint;
@@ -64,6 +65,16 @@ final class CachedAnalyticsProvider implements AnalyticsProvider
     public function topCities(Period $period, int $limit = 10): array
     {
         return $this->geo("cities:{$limit}", $period, fn (): array => $this->inner->topCities($period, $limit));
+    }
+
+    public function topPages(Period $period, int $limit = 20): array
+    {
+        $rows = $this->remember("pages:{$limit}", $period, fn (): array => array_map(
+            fn (PageRow $row): array => $row->toArray(),
+            $this->inner->topPages($period, $limit),
+        ));
+
+        return array_values(array_map(fn (array $row): PageRow => PageRow::fromArray($row), $rows));
     }
 
     /**

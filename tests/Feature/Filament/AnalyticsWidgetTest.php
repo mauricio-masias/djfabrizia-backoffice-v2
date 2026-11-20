@@ -5,8 +5,13 @@ namespace Tests\Feature\Filament;
 use App\Filament\Widgets\AnalyticsOverviewWidget;
 use App\Filament\Widgets\TopCitiesWidget;
 use App\Filament\Widgets\TopCountriesChart;
+use App\Filament\Widgets\TopPagesWidget;
 use App\Filament\Widgets\VisitorsTrendChart;
 use App\Services\Analytics\Contracts\AnalyticsProvider;
+use App\Services\Analytics\Data\Granularity;
+use App\Services\Analytics\Data\PageRow;
+use App\Services\Analytics\Data\Period;
+use App\Services\Analytics\Data\PeriodSummary;
 use App\Services\Analytics\Exceptions\AnalyticsUnavailable;
 use App\Services\Analytics\FakeAnalyticsProvider;
 use Livewire\Livewire;
@@ -166,6 +171,121 @@ class AnalyticsWidgetTest extends AdminTestCase
             ->assertOk()
             ->assertSee('Analytics unavailable')
             ->assertDontSee('No location data yet');
+    }
+
+    public function test_pages_table_lists_pages_by_views_with_home_labelled(): void
+    {
+        // The fake scales by period length: the default 7 days gives Home
+        // 280 views, and the /mixes spellings merge into 105.
+        Livewire::test(TopPagesWidget::class)
+            ->assertOk()
+            ->assertSee('Pages visited')
+            ->assertSeeInOrder(['Home', 'Mixes', 'Uk gigs', 'Contact me'])
+            ->assertSee('280')
+            ->assertSee('105')
+            ->assertDontSee('utm_source')
+            ->assertDontSee('Privacy policy');
+    }
+
+    public function test_pages_table_filter_switches_the_period(): void
+    {
+        $this->assertSame('7', TopPagesWidget::DEFAULT_PERIOD);
+        $this->assertSame(['1', '7', '30', '90'], array_map('strval', array_keys(TopPagesWidget::PERIODS)));
+
+        Livewire::test(TopPagesWidget::class)
+            ->assertTableFilterExists('period')
+            ->filterTable('period', '90')
+            ->assertSee('3,600')
+            ->filterTable('period', '1')
+            ->assertSee('40')
+            ->assertDontSee('3,600');
+    }
+
+    public function test_pages_table_shows_only_home_when_only_home_was_visited(): void
+    {
+        $this->app->instance(AnalyticsProvider::class, $this->pagesProvider([new PageRow('/', 9, 4)]));
+
+        Livewire::test(TopPagesWidget::class)
+            ->assertOk()
+            ->assertSee('Home')
+            ->assertDontSee('No visits');
+    }
+
+    public function test_pages_table_says_no_visits_when_nothing_was_viewed(): void
+    {
+        $this->app->instance(AnalyticsProvider::class, $this->pagesProvider([]));
+
+        Livewire::test(TopPagesWidget::class)
+            ->assertOk()
+            ->assertSee('No visits')
+            ->assertDontSee('Analytics unavailable');
+    }
+
+    public function test_pages_table_never_shows_zero_view_pages(): void
+    {
+        // GA4 already omits these, and consolidate() drops them; the widget
+        // filters once more so a provider that slips one through stays honest.
+        $this->app->instance(AnalyticsProvider::class, $this->pagesProvider([new PageRow('/bio', 0, 2)]));
+
+        Livewire::test(TopPagesWidget::class)
+            ->assertSee('No visits')
+            ->assertDontSee('Bio');
+    }
+
+    public function test_pages_table_explains_itself_when_analytics_is_down(): void
+    {
+        $this->failAnalytics();
+
+        Livewire::test(TopPagesWidget::class)
+            ->assertOk()
+            ->assertSee('Analytics unavailable')
+            ->assertDontSee('No visits');
+    }
+
+    /**
+     * A provider whose topPages() returns exactly the given rows, unfiltered.
+     *
+     * @param  list<PageRow>  $pages
+     */
+    private function pagesProvider(array $pages): AnalyticsProvider
+    {
+        return new class($pages) implements AnalyticsProvider
+        {
+            private FakeAnalyticsProvider $fake;
+
+            /**
+             * @param  list<PageRow>  $pages
+             */
+            public function __construct(private readonly array $pages)
+            {
+                $this->fake = new FakeAnalyticsProvider;
+            }
+
+            public function summary(Period $period): PeriodSummary
+            {
+                return $this->fake->summary($period);
+            }
+
+            public function trend(Period $period, Granularity $granularity = Granularity::Daily): array
+            {
+                return $this->fake->trend($period, $granularity);
+            }
+
+            public function topCountries(Period $period, int $limit = 10): array
+            {
+                return $this->fake->topCountries($period, $limit);
+            }
+
+            public function topCities(Period $period, int $limit = 10): array
+            {
+                return $this->fake->topCities($period, $limit);
+            }
+
+            public function topPages(Period $period, int $limit = 20): array
+            {
+                return $this->pages;
+            }
+        };
     }
 
     /**

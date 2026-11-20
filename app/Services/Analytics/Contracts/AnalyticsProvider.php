@@ -4,6 +4,7 @@ namespace App\Services\Analytics\Contracts;
 
 use App\Services\Analytics\Data\GeoRow;
 use App\Services\Analytics\Data\Granularity;
+use App\Services\Analytics\Data\PageRow;
 use App\Services\Analytics\Data\Period;
 use App\Services\Analytics\Data\PeriodSummary;
 use App\Services\Analytics\Data\TrendPoint;
@@ -45,4 +46,12 @@ interface AnalyticsProvider
      * @return list<GeoRow>
      */
     public function topCities(Period $period, int $limit = 10): array;
+
+    /**
+     * Pages with at least one view, most viewed first, with paths normalised
+     * and duplicates merged (see PageRow::consolidate()).
+     *
+     * @return list<PageRow>
+     */
+    public function topPages(Period $period, int $limit = 20): array;
 }

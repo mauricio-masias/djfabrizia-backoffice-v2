@@ -47,7 +47,7 @@ class SpotifySource extends CollectionSource
         return ContentSource::Spotify;
     }
 
-    public function fetch(): FetchResult
+    private function user(): string
     {
         $user = trim((string) SiteSettings::get('sync', 'spotify_user_id'));
 
@@ -55,8 +55,46 @@ class SpotifySource extends CollectionSource
             throw new RuntimeException('Set the Spotify user ID on the Settings page.');
         }
 
+        return $user;
+    }
+
+    /**
+     * Confirms the logged-in Spotify account is the one in Settings.
+     *
+     * @return string the connected account's ID
+     */
+    private function connectedAccount(string $token, string $user): string
+    {
+        $account = (string) SyncHttp::client()->withToken($token)->get(config('services.spotify.api_url').'/me')->throw()->json('id');
+
+        if ($account !== $user) {
+            throw new RuntimeException("Spotify is connected as {$account} but Settings say {$user}; reconnect with the right account or fix the user ID.");
+        }
+
+        return $account;
+    }
+
+    public function checkConnection(): string
+    {
+        $user = $this->user();
         $token = $this->tokens->accessToken();
-        $url = config('services.spotify.api_url').'/users/'.rawurlencode($user).'/playlists?limit='.self::PAGE_SIZE;
+        $account = $this->connectedAccount($token, $user);
+        $total = SyncHttp::client()->withToken($token)->get(config('services.spotify.api_url').'/me/playlists?limit=1')->throw()->json('total');
+
+        return "Connected to Spotify as {$account}".(is_numeric($total) ? ': '.(int) $total.' playlists.' : '.');
+    }
+
+    /**
+     * Reads the connected account's playlists (GET /me/playlists, the only
+     * endpoint Spotify still offers) and keeps the public ones it owns.
+     * Followed playlists of other people are not synced.
+     */
+    public function fetch(): FetchResult
+    {
+        $user = $this->user();
+        $token = $this->tokens->accessToken();
+        $this->connectedAccount($token, $user);
+        $url = config('services.spotify.api_url').'/me/playlists?limit='.self::PAGE_SIZE;
         $items = [];
 
         for ($page = 0; $page < self::MAX_PAGES && $url !== null; $page++) {
@@ -72,7 +110,7 @@ class SpotifySource extends CollectionSource
             }
 
             foreach ((array) $response->json('items', []) as $playlist) {
-                if (is_array($playlist) && is_string($playlist['id'] ?? null)) {
+                if (is_array($playlist) && is_string($playlist['id'] ?? null) && ($playlist['owner']['id'] ?? null) === $user && ($playlist['public'] ?? null) === true) {
                     $items[$playlist['id']] = $this->map($playlist);
                 }
             }
@@ -90,7 +128,7 @@ class SpotifySource extends CollectionSource
      */
     private function map(array $playlist): array
     {
-        $total = $playlist['tracks']['total'] ?? $playlist['items']['total'] ?? null;
+        $total = $playlist['items']['total'] ?? $playlist['tracks']['total'] ?? null;
 
         return [
             'title' => (string) ($playlist['name'] ?? ''),

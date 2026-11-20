@@ -20,6 +20,13 @@ interface SyncSource
     public function fetch(): FetchResult;
 
     /**
+     * Light, read-only check that the saved settings and credentials work
+     * (no sync, no content writes). Returns a human success detail and
+     * throws when the provider cannot be reached or rejects the setup.
+     */
+    public function checkConnection(): string;
+
+    /**
      * @param  array<string, mixed>  $item
      * @return 'created'|'updated'|'unchanged'
      */

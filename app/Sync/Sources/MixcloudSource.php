@@ -54,7 +54,7 @@ class MixcloudSource extends CollectionSource
         return ContentSource::Mixcloud;
     }
 
-    public function fetch(): FetchResult
+    private function user(): string
     {
         $user = trim((string) SiteSettings::get('sync', 'mixcloud_user'), '/ ');
 
@@ -62,6 +62,24 @@ class MixcloudSource extends CollectionSource
             throw new RuntimeException('Set the Mixcloud username on the Settings page.');
         }
 
+        return $user;
+    }
+
+    public function checkConnection(): string
+    {
+        $user = $this->user();
+        $response = SyncHttp::client()->get(config('services.mixcloud.api_url')."/{$user}/")->throw();
+
+        if (! is_string($response->json('username'))) {
+            throw new RuntimeException("Mixcloud user '{$user}' was not found.");
+        }
+
+        return "Connected to Mixcloud user {$response->json('username')}.";
+    }
+
+    public function fetch(): FetchResult
+    {
+        $user = $this->user();
         $url = config('services.mixcloud.api_url')."/{$user}/cloudcasts/?limit=".self::PAGE_SIZE;
         $items = [];
 

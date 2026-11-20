@@ -48,7 +48,10 @@ class YoutubeSource extends CollectionSource
         return ContentSource::Youtube;
     }
 
-    public function fetch(): FetchResult
+    /**
+     * @return array{0: string, 1: string} The API key and the configured channel.
+     */
+    private function credentials(): array
     {
         $key = (string) config('services.youtube.api_key');
         $channel = trim((string) SiteSettings::get('sync', 'youtube_channel_id'));
@@ -60,6 +63,21 @@ class YoutubeSource extends CollectionSource
         if ($channel === '') {
             throw new RuntimeException('Set the YouTube channel on the Settings page.');
         }
+
+        return [$key, $channel];
+    }
+
+    public function checkConnection(): string
+    {
+        [$key, $channel] = $this->credentials();
+        $this->uploadsPlaylist($channel, $key);
+
+        return "Connected to YouTube: channel {$channel} found.";
+    }
+
+    public function fetch(): FetchResult
+    {
+        [$key, $channel] = $this->credentials();
 
         [$uploads, $complete] = $this->uploads($this->uploadsPlaylist($channel, $key), $key);
         $items = [];

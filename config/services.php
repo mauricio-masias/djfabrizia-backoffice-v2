@@ -47,10 +47,13 @@ return [
     'spotify' => [
         'client_id' => env('SPOTIFY_CLIENT_ID'),
         'client_secret' => env('SPOTIFY_CLIENT_SECRET'),
-        // Optional: a user refresh token also returns the account's private and
-        // collaborative playlists. Without it, public playlists are read with
-        // an app token (client credentials).
+        // Spotify only serves playlists to a logged-in user: connect once with
+        // "Connect Spotify" on the Settings page (token stored in the database).
+        // SPOTIFY_REFRESH_TOKEN is an optional bootstrap fallback.
         'refresh_token' => env('SPOTIFY_REFRESH_TOKEN'),
+        // Must exactly match a redirect URI registered in the Spotify dashboard.
+        // Empty = the spotify.callback route URL.
+        'redirect_uri' => env('SPOTIFY_REDIRECT_URI'),
         'accounts_url' => 'https://accounts.spotify.com',
         'api_url' => 'https://api.spotify.com/v1',
     ],

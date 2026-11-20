@@ -13,6 +13,7 @@ use Djfabrizia\Content\Models\SyncRun;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
+use Illuminate\Support\Facades\Cache;
 use Throwable;
 
 /**
@@ -39,8 +40,32 @@ class SyncProviderJob implements ShouldQueue
         return [(new WithoutOverlapping('sync-'.$this->provider->value))->dontRelease()->expireAfter(300)];
     }
 
+    /** Safety net: a marker never outlives a job that was dropped before it ran. */
+    private const QUEUED_MARKER_MINUTES = 15;
+
+    public static function queuedCacheKey(SyncProvider $provider): string
+    {
+        return "sync-queued:{$provider->value}";
+    }
+
+    /**
+     * Remembers that a manual sync is waiting in the queue (the Settings page
+     * shows it as in progress until the job starts).
+     */
+    public static function markQueued(SyncProvider $provider): void
+    {
+        Cache::put(self::queuedCacheKey($provider), now()->toIso8601String(), now()->addMinutes(self::QUEUED_MARKER_MINUTES));
+    }
+
+    public static function isQueued(SyncProvider $provider): bool
+    {
+        return Cache::has(self::queuedCacheKey($provider));
+    }
+
     public function handle(SyncRunner $runner): void
     {
+        Cache::forget(self::queuedCacheKey($this->provider));
+
         $runner->run(self::source($this->provider));
     }
 
@@ -50,6 +75,8 @@ class SyncProviderJob implements ShouldQueue
      */
     public function failed(?Throwable $exception): void
     {
+        Cache::forget(self::queuedCacheKey($this->provider));
+
         SyncRun::query()
             ->where('provider', $this->provider)
             ->where('status', SyncStatus::Running)

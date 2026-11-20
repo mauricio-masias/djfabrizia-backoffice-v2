@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\SyncRuns\Pages;
 
 use App\Filament\Actions\SyncNowAction;
+use App\Filament\Concerns\PollsSyncProgress;
 use App\Filament\Resources\SyncRuns\SyncRunResource;
 use Djfabrizia\Content\Enums\SyncProvider;
 use Filament\Actions\ActionGroup;
@@ -10,6 +11,8 @@ use Filament\Resources\Pages\ListRecords;
 
 class ListSyncRuns extends ListRecords
 {
+    use PollsSyncProgress;
+
     protected static string $resource = SyncRunResource::class;
 
     protected function getHeaderActions(): array

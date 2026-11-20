@@ -2,3 +2,34 @@
 
 @source '../../../../app/Filament/**/*';
 @source '../../../../resources/views/filament/**/*';
+
+/* Settings → Test connection: neutral button, colored status icon. */
+.fi-btn.connection-check-ok > .fi-icon {
+    color: var(--success-600);
+}
+
+.fi-btn.connection-check-failed > .fi-icon {
+    color: var(--danger-600);
+}
+
+.dark .fi-btn.connection-check-ok > .fi-icon {
+    color: var(--success-400);
+}
+
+.dark .fi-btn.connection-check-failed > .fi-icon {
+    color: var(--danger-400);
+}
+
+/* Settings → Sync from X: the icon spins while that sync is queued or running.
+   With reduced motion the label ("Syncing…") and the disabled button are the cue. */
+@keyframes sync-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .fi-btn.sync-in-progress > .fi-icon {
+        animation: sync-spin 1s linear infinite;
+    }
+}

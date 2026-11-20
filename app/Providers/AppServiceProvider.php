@@ -7,7 +7,9 @@ use App\Publishing\ContentTopics;
 use Djfabrizia\Content\ContentServiceProvider;
 use Djfabrizia\Content\Exceptions\ReferencedContentException;
 use Filament\Actions\DeleteAction;
+use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
+use Filament\Tables\Columns\ToggleColumn;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -35,6 +37,10 @@ class AppServiceProvider extends ServiceProvider
 
         // One password rule for the profile page and the Users form.
         Password::defaults(fn (): Password => Password::min(12));
+
+        // ON reads as success (green), not the red primary color; OFF stays gray.
+        Toggle::configureUsing(fn (Toggle $toggle) => $toggle->onColor('success'));
+        ToggleColumn::configureUsing(fn (ToggleColumn $column) => $column->onColor('success'));
 
         foreach (ContentTopics::OBSERVED as $model) {
             $model::observe(PublishesToEndpoint::class);

@@ -2,16 +2,19 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Actions\RebuildApiCacheAction;
 use App\Filament\NavigationGroup;
 use App\Settings\SiteSettings;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\Form;
+use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -42,12 +45,11 @@ class Settings extends Page
             ->statePath('data')
             ->components([
                 Section::make('Sync accounts')
-                    ->description('The accounts the daily Mixcloud, Spotify and YouTube syncs read from.')
-                    ->columns(3)
+                    ->description('The accounts the daily Mixcloud, Spotify and YouTube syncs read from. Turning a daily sync off does not affect the manual "Sync now" button.')
                     ->schema([
-                        TextInput::make('sync.mixcloud_user')->label(SiteSettings::FIELDS['sync']['mixcloud_user'])->placeholder('djfabrizia')->maxLength(100),
-                        TextInput::make('sync.spotify_user_id')->label(SiteSettings::FIELDS['sync']['spotify_user_id'])->placeholder('11162006882')->maxLength(100),
-                        TextInput::make('sync.youtube_channel_id')->label(SiteSettings::FIELDS['sync']['youtube_channel_id'])->placeholder('UC…')->maxLength(100),
+                        self::syncRow('mixcloud_user', 'mixcloud_enabled', 'djfabrizia'),
+                        self::syncRow('spotify_user_id', 'spotify_enabled', '11162006882'),
+                        self::syncRow('youtube_channel_id', 'youtube_enabled', 'UC…'),
                     ]),
                 Section::make('Bookings')
                     ->schema([
@@ -57,6 +59,15 @@ class Settings extends Page
                             ->maxLength(255)
                             ->helperText('Leave empty to use the site\'s default address.'),
                     ]),
+            ]);
+    }
+
+    private static function syncRow(string $accountKey, string $enabledKey, string $placeholder): Grid
+    {
+        return Grid::make(['default' => 1, 'md' => 2])
+            ->schema([
+                TextInput::make("sync.{$accountKey}")->label(SiteSettings::FIELDS['sync'][$accountKey])->placeholder($placeholder)->maxLength(100),
+                Toggle::make("sync.{$enabledKey}")->label('Daily sync')->default(true)->inline(false),
             ]);
     }
 
@@ -70,6 +81,11 @@ class Settings extends Page
                     Actions::make([
                         Action::make('save')->label('Save settings')->submit('save'),
                     ]),
+                ]),
+            Section::make('API cache')
+                ->description('Changes you save are published to the website automatically. Rebuild everything only if something looks out of date.')
+                ->schema([
+                    Actions::make([RebuildApiCacheAction::make()])->key('apiCacheActions'),
                 ]),
         ]);
     }

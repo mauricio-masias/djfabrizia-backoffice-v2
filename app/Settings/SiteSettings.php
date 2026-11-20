@@ -2,6 +2,7 @@
 
 namespace App\Settings;
 
+use Djfabrizia\Content\Enums\SyncProvider;
 use Djfabrizia\Content\Models\Setting;
 
 /**
@@ -20,11 +21,23 @@ final class SiteSettings
             'mixcloud_user' => 'Mixcloud username',
             'spotify_user_id' => 'Spotify user ID',
             'youtube_channel_id' => 'YouTube channel ID',
+            'mixcloud_enabled' => 'Mixcloud daily sync',
+            'spotify_enabled' => 'Spotify daily sync',
+            'youtube_enabled' => 'YouTube daily sync',
         ],
         'bookings' => [
             'notify_email' => 'Send new booking requests to',
         ],
     ];
+
+    /**
+     * Whether the scheduled daily sync runs for a provider. A missing value
+     * means enabled; the manual "Sync now" action ignores this.
+     */
+    public static function syncEnabled(SyncProvider $provider): bool
+    {
+        return (bool) self::get('sync', $provider->value.'_enabled', true);
+    }
 
     public static function get(string $group, string $key, mixed $default = null): mixed
     {
@@ -40,7 +53,9 @@ final class SiteSettings
 
         foreach (self::FIELDS as $group => $fields) {
             foreach (array_keys($fields) as $key) {
-                $values[$group][$key] = self::get($group, $key);
+                $values[$group][$key] = str_ends_with($key, '_enabled')
+                    ? (bool) self::get($group, $key, true)
+                    : self::get($group, $key);
             }
         }
 

@@ -6,8 +6,8 @@ Filament 5 back office that replaces the WordPress/ACF back office in `../djfabr
 
 ## Project rules
 
-- This app owns the content schema in the `djfabriz_cms` database. The endpoint (`../djfabrizia-endpoint`) reads it with a read-only user, so schema changes are expand/contract only: never rename or drop a column in one step.
-- Shared models, backed enums and block DTOs live in `packages/content` (`djfabrizia/content`). The endpoint requires the same package.
+- This app owns the content schema in the `djfabriz_cms` database. The endpoint (`../djfabrizia-endpoint`) uses the same database and reads these tables, so schema changes are expand/contract only: never rename or drop a column in one step.
+- Shared models, backed enums and block DTOs live in `packages/content` (`djfabrizia/content`). The endpoint keeps a committed copy in its own `packages/content`; after changing the package here, run `scripts/sync-content.sh` in the endpoint repo and commit it there.
 - Production is shared hosting and deployment is manual and out of scope. Ignore the Laravel Cloud deployment guideline above. Code must work with cron-driven `schedule:run`, the `database` queue and cache drivers, and no long-running daemons or Redis.
 - Media uses Laravel `Storage` on the `public` disk (`storage/app/public/`, git-ignored; uploaded to the server by hand). Never build media URLs by hand.
 - Tests are PHPUnit only (no Pest). Faker factories for test data.

@@ -31,3 +31,6 @@ Thumbs.db
 
 # Baseline backups (WP dump + uploads), never committed
 /_baseline
+
+# GA4 service account key (uploaded to the server by hand)
+/storage/app/private/analytics

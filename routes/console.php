@@ -1,6 +1,7 @@
 <?php
 
 use App\Jobs\SyncProviderJob;
+use App\Settings\SiteSettings;
 use Djfabrizia\Content\Enums\SyncProvider;
 use Illuminate\Support\Facades\Schedule;
 
@@ -24,10 +25,11 @@ Schedule::command('queue:work --stop-when-empty --max-time=55 --tries=3 --timeou
     ->runInBackground() // or a 55 s drain delays every other task of that minute
     ->name('queue-drain');
 
-// Daily content syncs (queued, then run by the queue drain above).
-Schedule::job(new SyncProviderJob(SyncProvider::Mixcloud))->dailyAt('03:00')->name('sync-mixcloud');
-Schedule::job(new SyncProviderJob(SyncProvider::Spotify))->dailyAt('03:10')->name('sync-spotify');
-Schedule::job(new SyncProviderJob(SyncProvider::Youtube))->dailyAt('03:20')->name('sync-youtube');
+// Daily content syncs (queued, then run by the queue drain above). Each can be
+// switched off on the Settings page; checked at run time, manual syncs unaffected.
+Schedule::job(new SyncProviderJob(SyncProvider::Mixcloud))->dailyAt('03:00')->when(fn () => SiteSettings::syncEnabled(SyncProvider::Mixcloud))->name('sync-mixcloud');
+Schedule::job(new SyncProviderJob(SyncProvider::Spotify))->dailyAt('03:10')->when(fn () => SiteSettings::syncEnabled(SyncProvider::Spotify))->name('sync-spotify');
+Schedule::job(new SyncProviderJob(SyncProvider::Youtube))->dailyAt('03:20')->when(fn () => SiteSettings::syncEnabled(SyncProvider::Youtube))->name('sync-youtube');
 
 // Public API cache: send pending content changes (saves send them at once;
 // this retries anything left over, e.g. after a sync), and pick up content

@@ -2,6 +2,8 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Auth\EditProfile;
+use App\Filament\Auth\Login;
 use App\Filament\NavigationGroup;
 use App\Filament\Pages\Dashboard;
 use Filament\Http\Middleware\Authenticate;
@@ -27,8 +29,8 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->viteTheme('resources/css/filament/admin/theme.css')
-            ->login()
-            ->profile(isSimple: false)
+            ->login(Login::class)
+            ->profile(EditProfile::class, isSimple: false)
             ->brandName('DJ Fabrizia')
             ->font('Raleway')
             ->colors([

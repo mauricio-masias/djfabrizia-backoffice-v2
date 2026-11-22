@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users\Schemas;
 
+use App\Filament\Forms\UsernameInput;
 use App\Models\User;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -21,7 +22,9 @@ class UserForm
                     ->columnSpanFull()
                     ->schema([
                         TextInput::make('name')->required()->maxLength(255),
-                        TextInput::make('email')->email()->required()->maxLength(255)->unique(ignoreRecord: true),
+                        UsernameInput::make()
+                            ->unique(ignoreRecord: true)
+                            ->helperText(UsernameInput::MESSAGE),
                         TextInput::make('password')
                             ->password()
                             ->revealable()

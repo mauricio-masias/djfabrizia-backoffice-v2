@@ -2,33 +2,24 @@
 
 namespace App\Filament\Auth;
 
-use App\Filament\Forms\UsernameInput;
-use App\Models\User;
 use Filament\Auth\Pages\Login as BaseLogin;
+use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Component;
-use SensitiveParameter;
 
 /**
- * Signs in with a username or an email address.
+ * Signs in with whatever the users.email column holds, which may be a username
+ * or an email address, so the format is not checked here.
  */
 class Login extends BaseLogin
 {
     protected function getEmailFormComponent(): Component
     {
-        return UsernameInput::make()
+        return TextInput::make('email')
+            ->label('Username')
+            ->required()
+            ->maxLength(255)
+            ->autocapitalize('none')
             ->autocomplete('username')
             ->autofocus();
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     * @return array<string, mixed>
-     */
-    protected function getCredentialsFromFormData(#[SensitiveParameter] array $data): array
-    {
-        $credentials = parent::getCredentialsFromFormData($data);
-        $user = User::findByLogin($credentials['email']);
-
-        return $user === null ? $credentials : [...$credentials, 'email' => $user->email];
     }
 }

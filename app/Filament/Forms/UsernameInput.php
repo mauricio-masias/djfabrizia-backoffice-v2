@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
 /**
- * The field a user signs in with, shared by the login, profile and user forms.
+ * Sets the login a user signs in with, on the profile and user forms.
  *
  * It is stored in the users.email column, which holds either a username or an
  * email address.

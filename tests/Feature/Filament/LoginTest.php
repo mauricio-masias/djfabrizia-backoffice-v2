@@ -10,7 +10,6 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\TestWith;
 use Tests\TestCase;
 
@@ -28,64 +27,33 @@ class LoginTest extends TestCase
             ->assertDontSee('type="email"', false);
     }
 
-    #[TestWith(['dj_fabrizia1'])]
-    #[TestWith(['DJ_Fabrizia1'])]
-    public function test_a_stored_username_signs_in_whatever_its_case(string $username): void
+    #[TestWith(['x1x2x3'])]
+    #[TestWith(['x1x2x3@djfabrizia.com'])]
+    #[TestWith(['x1-x2.x3'])]
+    public function test_the_stored_login_signs_in_whether_or_not_it_is_an_email(string $login): void
     {
-        $user = User::factory()->admin()->create(['email' => 'dj_fabrizia1']);
-
-        $this->signIn($username)->assertHasNoFormErrors();
-
-        $this->assertAuthenticatedAs($user);
-    }
-
-    #[TestWith(['owner@example.com'])]
-    #[TestWith(['Owner@Example.com'])]
-    #[TestWith(['owner'])]
-    #[TestWith(['OWNER'])]
-    public function test_a_stored_email_signs_in_in_full_or_by_the_part_before_the_at(string $login): void
-    {
-        $user = User::factory()->admin()->create(['email' => 'owner@example.com']);
+        $user = User::factory()->admin()->create(['email' => $login]);
 
         $this->signIn($login)->assertHasNoFormErrors();
 
         $this->assertAuthenticatedAs($user);
     }
 
-    public function test_an_exact_username_wins_over_the_start_of_an_email(): void
+    #[TestWith(['x1x2x3'])]
+    #[TestWith(['Fabrizia'])]
+    #[TestWith(['x1x2x3@example.org'])]
+    public function test_only_the_exact_email_column_is_matched(string $login): void
     {
-        User::factory()->admin()->create(['email' => 'owner@example.com']);
-        $exact = User::factory()->admin()->create(['email' => 'owner']);
+        User::factory()->admin()->create(['name' => 'Fabrizia', 'email' => 'x1x2x3@djfabrizia.com']);
 
-        $this->signIn('owner');
-
-        $this->assertAuthenticatedAs($exact);
-    }
-
-    public function test_a_username_shared_by_two_emails_is_refused_but_the_email_still_works(): void
-    {
-        User::factory()->admin()->create(['email' => 'owner@example.com']);
-        $second = User::factory()->admin()->create(['email' => 'owner@example.org']);
-
-        $this->signIn('owner')->assertHasFormErrors(['email']);
-        $this->assertGuest();
-
-        $this->signIn('owner@example.org');
-        $this->assertAuthenticatedAs($second);
-    }
-
-    public function test_an_underscore_is_not_a_wildcard(): void
-    {
-        User::factory()->admin()->create(['email' => 'djxone@example.com']);
-
-        $this->signIn('dj_one')->assertHasFormErrors(['email']);
+        $this->signIn($login)->assertHasFormErrors(['email']);
 
         $this->assertGuest();
     }
 
     public function test_a_wrong_password_is_refused(): void
     {
-        User::factory()->admin()->create(['email' => 'owner@example.com']);
+        User::factory()->admin()->create(['email' => 'owner']);
 
         $this->signIn('owner', 'wrong')->assertHasFormErrors(['email']);
 
@@ -97,32 +65,6 @@ class LoginTest extends TestCase
         User::factory()->create(['email' => 'visitor']);
 
         $this->signIn('visitor')->assertHasFormErrors(['email']);
-
-        $this->assertGuest();
-    }
-
-    /**
-     * @return array<string, array{string}>
-     */
-    public static function invalidUsernames(): array
-    {
-        return [
-            'space' => ['dj fabrizia'],
-            'hyphen' => ['dj-fabrizia'],
-            'dot' => ['dj.fabrizia'],
-            'accent' => ['fabrizía'],
-            'wildcard' => ['dj%'],
-            'trailing newline' => ["owner\n"],
-            'incomplete email' => ['owner@'],
-        ];
-    }
-
-    #[DataProvider('invalidUsernames')]
-    public function test_other_characters_are_rejected_with_an_explanation(string $username): void
-    {
-        $this->signIn($username)
-            ->assertHasFormErrors(['email'])
-            ->assertSee(UsernameInput::MESSAGE);
 
         $this->assertGuest();
     }
@@ -145,14 +87,20 @@ class LoginTest extends TestCase
         $this->assertTrue(User::query()->where('email', 'editor_1')->exists());
     }
 
-    public function test_the_users_form_rejects_an_invalid_username(): void
+    #[TestWith(['dj fabrizia'])]
+    #[TestWith(['dj-fabrizia'])]
+    #[TestWith(['fabrizía'])]
+    #[TestWith(["owner\n"])]
+    #[TestWith(['owner@'])]
+    public function test_the_users_form_rejects_an_invalid_username(string $username): void
     {
         $this->actingAs(User::factory()->admin()->create());
 
         Livewire::test(CreateUser::class)
-            ->fillForm(['name' => 'Editor', 'email' => 'not valid', 'password' => 'a-very-long-password'])
+            ->fillForm(['name' => 'Editor', 'email' => $username, 'password' => 'a-very-long-password'])
             ->call('create')
-            ->assertHasFormErrors(['email']);
+            ->assertHasFormErrors(['email'])
+            ->assertSee(UsernameInput::MESSAGE);
     }
 
     public function test_a_user_with_a_username_can_save_their_profile(): void

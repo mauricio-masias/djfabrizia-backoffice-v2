@@ -2,7 +2,7 @@
 
 namespace App\Filament\Widgets;
 
-use App\Services\Analytics\Contracts\AnalyticsProvider;
+use App\Filament\Widgets\Concerns\ReadsSiteAnalytics;
 use App\Services\Analytics\Data\Period;
 use App\Services\Analytics\Exceptions\AnalyticsUnavailable;
 use Filament\Tables\Columns\TextColumn;
@@ -18,6 +18,8 @@ use Filament\Widgets\TableWidget;
  */
 class TopCitiesWidget extends TableWidget
 {
+    use ReadsSiteAnalytics;
+
     protected static ?int $sort = 4;
 
     protected int|string|array $columnSpan = 'full';
@@ -59,7 +61,7 @@ class TopCitiesWidget extends TableWidget
     private function rows(): array
     {
         try {
-            $rows = app(AnalyticsProvider::class)->topCities(Period::lastDays(30), 10);
+            $rows = $this->analytics()->topCities(Period::lastDays(30), 10);
         } catch (AnalyticsUnavailable $e) {
             report($e);
 

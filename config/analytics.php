@@ -32,6 +32,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Sister site property
+    |--------------------------------------------------------------------------
+    |
+    | FabriziaCorsi has its own GA4 property and service account key, and must
+    | never share the main property id. The driver, reporting calendar and
+    | cache settings apply to both sites.
+    |
+    */
+
+    'fabrizia_corsi' => [
+        'property_id' => env('GA4_SISTER_PROPERTY_ID'),
+        'credentials_path' => env(
+            'GA4_SISTER_CREDENTIALS_PATH',
+            'storage/app/private/analytics/ga4-sister-service-account.json',
+        ),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Reporting calendar
     |--------------------------------------------------------------------------
     |

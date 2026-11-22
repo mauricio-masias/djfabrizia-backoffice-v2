@@ -2,7 +2,7 @@
 
 namespace App\Filament\Widgets;
 
-use App\Services\Analytics\Contracts\AnalyticsProvider;
+use App\Filament\Widgets\Concerns\ReadsSiteAnalytics;
 use App\Services\Analytics\Data\Granularity;
 use App\Services\Analytics\Data\Period;
 use App\Services\Analytics\Data\TrendPoint;
@@ -11,6 +11,8 @@ use Filament\Widgets\ChartWidget;
 
 class VisitorsTrendChart extends ChartWidget
 {
+    use ReadsSiteAnalytics;
+
     protected static ?int $sort = 2;
 
     protected int|string|array $columnSpan = 'full';
@@ -56,7 +58,7 @@ class VisitorsTrendChart extends ChartWidget
         $granularity = Granularity::forLength($days);
 
         try {
-            $points = app(AnalyticsProvider::class)->trend(
+            $points = $this->analytics()->trend(
                 Period::lastDays($days)->alignedTo($granularity),
                 $granularity,
             );

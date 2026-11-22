@@ -2,7 +2,7 @@
 
 namespace App\Filament\Widgets;
 
-use App\Services\Analytics\Contracts\AnalyticsProvider;
+use App\Filament\Widgets\Concerns\ReadsSiteAnalytics;
 use App\Services\Analytics\Data\GeoRow;
 use App\Services\Analytics\Data\Period;
 use App\Services\Analytics\Exceptions\AnalyticsUnavailable;
@@ -10,6 +10,8 @@ use Filament\Widgets\ChartWidget;
 
 class TopCountriesChart extends ChartWidget
 {
+    use ReadsSiteAnalytics;
+
     protected static ?int $sort = 3;
 
     protected ?string $pollingInterval = null;
@@ -41,7 +43,7 @@ class TopCountriesChart extends ChartWidget
     protected function getData(): array
     {
         try {
-            $rows = app(AnalyticsProvider::class)
+            $rows = $this->analytics()
                 ->topCountries(Period::lastDays((int) ($this->filter ?? 30)), 10);
         } catch (AnalyticsUnavailable $e) {
             report($e);

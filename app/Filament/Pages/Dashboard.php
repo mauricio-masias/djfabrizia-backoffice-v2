@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Filament\Actions\RebuildApiCacheAction;
 use App\Filament\Widgets\AnalyticsOverviewWidget;
 use App\Filament\Widgets\ContentStats;
+use App\Filament\Widgets\FabriziaCorsi;
 use App\Filament\Widgets\LatestBookings;
 use App\Filament\Widgets\SyncStatus;
 use App\Filament\Widgets\TopCitiesWidget;
@@ -18,7 +19,8 @@ use Filament\Widgets\Widget;
 use Livewire\Attributes\Url;
 
 /**
- * Two views of the dashboard: the back-office overview and Google Analytics.
+ * Three views of the dashboard: the back-office overview, Google Analytics for
+ * the main site, and Google Analytics for the sister site FabriziaCorsi.
  *
  * The panel discovers every widget in app/Filament/Widgets, so the widgets
  * are listed here per view instead of taken from the panel. Switching is a
@@ -30,6 +32,8 @@ class Dashboard extends BaseDashboard
     public const string OVERVIEW = 'overview';
 
     public const string ANALYTICS = 'analytics';
+
+    public const string FABRIZIA_CORSI = 'fabrizia-corsi';
 
     /**
      * @var array<string, list<class-string<Widget>>>
@@ -46,6 +50,13 @@ class Dashboard extends BaseDashboard
             TopCountriesChart::class,
             TopCitiesWidget::class,
             TopPagesWidget::class,
+        ],
+        // No pages table: the sister site is a single page.
+        self::FABRIZIA_CORSI => [
+            FabriziaCorsi\AnalyticsOverviewWidget::class,
+            FabriziaCorsi\VisitorsTrendChart::class,
+            FabriziaCorsi\TopCountriesChart::class,
+            FabriziaCorsi\TopCitiesWidget::class,
         ],
     ];
 
@@ -67,22 +78,27 @@ class Dashboard extends BaseDashboard
         return array_key_exists($this->tab, self::WIDGETS) ? $this->tab : self::OVERVIEW;
     }
 
-    public function isShowingAnalytics(): bool
-    {
-        return $this->currentTab() === self::ANALYTICS;
-    }
-
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('toggleAnalytics')
-                ->label(fn (): string => $this->isShowingAnalytics() ? 'Overview' : 'Analytics')
-                ->icon(fn (): Heroicon => $this->isShowingAnalytics() ? Heroicon::OutlinedSquares2x2 : Heroicon::OutlinedChartBar)
-                ->color('gray')
-                ->action(function (): void {
-                    $this->tab = $this->isShowingAnalytics() ? self::OVERVIEW : self::ANALYTICS;
-                }),
+            $this->toggleAction('toggleAnalytics', self::ANALYTICS, 'Analytics', Heroicon::OutlinedChartBar),
+            $this->toggleAction('toggleFabriziaCorsi', self::FABRIZIA_CORSI, 'FabriziaCorsi Analytics', Heroicon::OutlinedPresentationChartLine),
             RebuildApiCacheAction::make(),
         ];
+    }
+
+    /**
+     * A button that opens a view, and leads back to the overview while that
+     * view is open.
+     */
+    private function toggleAction(string $name, string $tab, string $label, Heroicon $icon): Action
+    {
+        return Action::make($name)
+            ->label(fn (): string => $this->currentTab() === $tab ? 'Overview' : $label)
+            ->icon(fn (): Heroicon => $this->currentTab() === $tab ? Heroicon::OutlinedSquares2x2 : $icon)
+            ->color('gray')
+            ->action(function () use ($tab): void {
+                $this->tab = $this->currentTab() === $tab ? self::OVERVIEW : $tab;
+            });
     }
 }

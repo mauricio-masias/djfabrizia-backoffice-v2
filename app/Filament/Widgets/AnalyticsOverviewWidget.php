@@ -2,6 +2,8 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Widgets\Concerns\ReadsSiteAnalytics;
+use App\Services\Analytics\AnalyticsSite;
 use App\Services\Analytics\Contracts\AnalyticsProvider;
 use App\Services\Analytics\Data\Period;
 use App\Services\Analytics\Data\PeriodSummary;
@@ -13,6 +15,8 @@ use Illuminate\Support\Number;
 
 class AnalyticsOverviewWidget extends StatsOverviewWidget
 {
+    use ReadsSiteAnalytics;
+
     protected static ?int $sort = 1;
 
     /**
@@ -22,7 +26,10 @@ class AnalyticsOverviewWidget extends StatsOverviewWidget
      */
     protected ?string $pollingInterval = null;
 
-    protected ?string $heading = 'Visitors';
+    protected function getHeading(): ?string
+    {
+        return $this->site() === AnalyticsSite::Main ? 'Visitors' : $this->site()->label().' visitors';
+    }
 
     protected function getDescription(): ?string
     {
@@ -32,7 +39,7 @@ class AnalyticsOverviewWidget extends StatsOverviewWidget
     protected function getStats(): array
     {
         try {
-            return $this->stats(app(AnalyticsProvider::class));
+            return $this->stats($this->analytics());
         } catch (AnalyticsUnavailable $e) {
             // A Google outage, a revoked key, or an exhausted quota must not
             // take the whole dashboard down with it.

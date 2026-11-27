@@ -33,3 +33,162 @@
         animation: sync-spin 1s linear infinite;
     }
 }
+
+/* Login: spotlights and lines with a travelling glow behind a frosted card, in the
+   panel's primary red. The backdrop markup only renders on the login page (see
+   AdminPanelProvider), so these rules leave the other simple pages alone. */
+.fi-simple-layout:has(.login-backdrop) {
+    --login-backdrop-page-bg: var(--gray-50);
+    --login-backdrop-spotlight-corner: color-mix(in oklab, var(--primary-400) 18%, transparent);
+    --login-backdrop-spotlight-bottom: color-mix(in oklab, var(--primary-400) 24%, transparent);
+    --login-backdrop-base-line: var(--primary-600);
+    --login-backdrop-base-opacity: 0.12;
+    --login-backdrop-glow: var(--primary-400);
+    --login-backdrop-glow-opacity: 0.45;
+    --login-backdrop-comet: 30;
+    --login-backdrop-gap: 600;
+    --login-backdrop-cycle: -650;
+    --login-backdrop-duration: 64s;
+    --login-backdrop-card-border: color-mix(in oklab, var(--primary-400) 15%, transparent);
+    --login-backdrop-card-shadow: 0 20px 60px rgb(0 0 0 / 0.08);
+    --login-backdrop-card-blur: 8px;
+    --login-backdrop-card-radius: 16px;
+
+    position: relative;
+    isolation: isolate;
+    overflow-x: clip;
+    background: var(--login-backdrop-page-bg);
+}
+
+.dark .fi-simple-layout:has(.login-backdrop) {
+    --login-backdrop-page-bg: #0a0a0f;
+    --login-backdrop-spotlight-corner: color-mix(in oklab, var(--primary-400) 30%, transparent);
+    --login-backdrop-spotlight-bottom: color-mix(in oklab, var(--primary-400) 40%, transparent);
+    --login-backdrop-base-opacity: 0.1;
+    --login-backdrop-glow-opacity: 0.5;
+    --login-backdrop-card-shadow: 0 20px 60px rgb(0 0 0 / 0.5);
+}
+
+body:has(.login-backdrop) {
+    background: #0a0a0f;
+}
+
+html:not(.dark) body:has(.login-backdrop) {
+    background: var(--gray-50);
+}
+
+.login-backdrop__spotlights,
+.login-backdrop__lines {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.login-backdrop__lines {
+    z-index: 0;
+}
+
+.login-backdrop__spotlights {
+    z-index: 1;
+    background:
+        radial-gradient(circle at 10% -10%, var(--login-backdrop-spotlight-corner) 0%, transparent 12%),
+        radial-gradient(circle at 90% -10%, var(--login-backdrop-spotlight-corner) 0%, transparent 12%),
+        radial-gradient(circle at 50% 190%, var(--login-backdrop-spotlight-bottom) 0%, transparent 60%);
+}
+
+.login-backdrop__lines > svg {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    overflow: visible;
+}
+
+.login-backdrop__lines > svg:nth-child(1) {
+    top: 0;
+    height: 240px;
+}
+
+.login-backdrop__lines > svg:nth-child(2) {
+    top: 150px;
+    height: 466px;
+}
+
+.login-backdrop__lines > svg:nth-child(3) {
+    top: 320px;
+    height: 704px;
+}
+
+.login-backdrop__base-line,
+.login-backdrop__glow-line {
+    fill: none;
+}
+
+.login-backdrop__base-line {
+    stroke: var(--login-backdrop-base-line);
+    stroke-width: 1;
+    opacity: var(--login-backdrop-base-opacity);
+}
+
+.login-backdrop__glow-line {
+    stroke: var(--login-backdrop-glow);
+    stroke-width: 2;
+    opacity: var(--login-backdrop-glow-opacity);
+    stroke-dasharray: var(--login-backdrop-comet) var(--login-backdrop-gap);
+    filter: blur(3px) drop-shadow(0 0 6px var(--login-backdrop-glow));
+    animation: login-backdrop-travel var(--login-backdrop-duration) linear infinite;
+}
+
+@keyframes login-backdrop-travel {
+    from {
+        stroke-dashoffset: 0;
+    }
+
+    to {
+        stroke-dashoffset: var(--login-backdrop-cycle);
+    }
+}
+
+/* With reduced motion the lines stay put and the comet rests at its start. */
+@media (prefers-reduced-motion: reduce) {
+    .login-backdrop__glow-line {
+        animation: none;
+    }
+}
+
+.fi-simple-layout:has(.login-backdrop) .fi-simple-main-ctn {
+    position: relative;
+    z-index: 2;
+}
+
+.fi-simple-layout:has(.login-backdrop) .fi-simple-main {
+    border: 1px solid var(--login-backdrop-card-border);
+    background: transparent;
+    backdrop-filter: blur(var(--login-backdrop-card-blur));
+    box-shadow: var(--login-backdrop-card-shadow);
+}
+
+@media (width >= 40rem) {
+    .fi-simple-layout:has(.login-backdrop) .fi-simple-main {
+        border-radius: var(--login-backdrop-card-radius);
+    }
+}
+
+.fi-simple-layout:has(.login-backdrop) .fi-simple-header .fi-logo {
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+/* Login only: the brand reads "DJ Fabrizia Backoffice"; the sidebar keeps "DJ Fabrizia". */
+.fi-simple-layout:has(.login-backdrop) .fi-simple-header .fi-logo::after {
+    content: "\00a0 Backoffice";
+}
+
+.fi-simple-layout:has(.login-backdrop) .fi-simple-header-heading {
+    font-size: 18px;
+    font-weight: 400;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+}

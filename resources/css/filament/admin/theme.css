@@ -175,6 +175,7 @@ html:not(.dark) body:has(.login-backdrop) {
 }
 
 .fi-simple-layout:has(.login-backdrop) .fi-simple-header .fi-logo {
+    color: oklch(0.39458823529412 0.09963636363636 30.44);
     font-size: 20px;
     font-weight: 500;
     letter-spacing: 0.1em;
@@ -187,8 +188,9 @@ html:not(.dark) body:has(.login-backdrop) {
 }
 
 .fi-simple-layout:has(.login-backdrop) .fi-simple-header-heading {
-    font-size: 18px;
-    font-weight: 400;
+    color: oklch(0.59782352941176 0.16913636363636 30.44);
+    font-size: 16px;
+    font-weight: 500;
     letter-spacing: 0.09em;
     text-transform: uppercase;
 }
